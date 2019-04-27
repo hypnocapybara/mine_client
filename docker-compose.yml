@@ -1,0 +1,9 @@
+version: '3'
+services:
+  client:
+    build: .
+    command: start
+    ports:
+    - 3000:3000
+    environment:
+      REACT_APP_SERVER_ADDRESS: 91.240.86.53:8000
