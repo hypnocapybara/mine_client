@@ -89,7 +89,6 @@ class Games extends React.Component {
         {this.renderGamesList()}
 
         <Stats
-          token={user.token}
           tree={this.props.tree.stats}
         />
 

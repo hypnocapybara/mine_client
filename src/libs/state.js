@@ -15,30 +15,13 @@ export function isFailCursor(cursor) {
   return cursor.get('status') === 'fail';
 }
 
-
-function compareProps(oldProps, newProps) {
-  const oldKeys = _.keys(oldProps);
-  const newKeys = _.keys(newProps);
-
-  if (oldKeys.length !== newKeys.length) {
-    return false;
-  }
-
-  return !_.some(oldProps, (oldProp, key) => {
-    if (oldProp instanceof Baobab.Cursor) {
-      return oldProp.path !== newProps[key].path;
-    }
-    return !_.isEqual(oldProp, newProps[key]);
-  });
-}
-
 function initCursor(cursor, schema) {
   if (_.isFunction(schema)) {
     if (!cursor.exists()) {
       schema(cursor);
     }
-  } else if (_.isPlainObject(schema) && !_.isArray(schema)) {
-    _.each(schema, (childSchema, path) => {
+  } else if (_.isPlainObject(schema)) {
+    _.forEach(schema, (childSchema, path) => {
       initCursor(cursor.select(path), childSchema);
     });
   } else if (!cursor.exists()) {
@@ -53,7 +36,7 @@ class TreeStateWrapper extends Component {
     this.onUpdate = this.onUpdate.bind(this);
     this.handleNewCursor = this.handleNewCursor.bind(this);
 
-    _.each(props.parentProps, (prop, propName) => {
+    _.forEach(props.parentProps, (prop, propName) => {
       if (prop instanceof Baobab.Cursor) {
         this.handleNewCursor(prop, propName);
      }
@@ -69,24 +52,8 @@ class TreeStateWrapper extends Component {
     cursor.on('update', this.onUpdate);
   }
 
-  componentWillReceiveProps(props) {
-    _.each(props.parentProps, (prop, propName) => {
-      if (prop instanceof Baobab.Cursor) {
-        const oldProp = this.props.parentProps[propName];
-        if (oldProp.path !== prop.path) {
-          oldProp.off('update', this.onUpdate);
-          this.handleNewCursor(prop, propName);
-        }
-      }
-    });
-  }
-
-  shouldComponentUpdate(nextProps) {
-    return !compareProps(this.props.parentProps, nextProps.parentProps);
-  }
-
   componentWillUnmount() {
-    _.each(this.props.parentProps, (cursor) => {
+    _.forEach(this.props.parentProps, (cursor) => {
       if (cursor instanceof Baobab.Cursor) {
         cursor.off('update', this.onUpdate);
       }
@@ -99,19 +66,29 @@ class TreeStateWrapper extends Component {
 
   render() {
     const ChildComponent = this.props.component;
+    const { mapTreeToProps, parentProps } = this.props;
+    const tree = _.get(
+      _.find(parentProps, (prop) => prop instanceof Baobab.Cursor),
+      'tree');
+    let treeProps = {};
+    if (tree) {
+      _.forEach(mapTreeToProps, (path, key) => treeProps[key] = tree.select(path).get());
+    }
+
     return (
-      <ChildComponent {...this.props.parentProps} />
+      <ChildComponent {...this.props.parentProps} {...treeProps} />
     );
   }
 }
 
 
-export default (model) => (component) => {
+export default (model, mapTreeToProps) => (component) => {
   function _Component(props) {
     const schema = _.isFunction(model) ? model(props) : model;
     return (
       <TreeStateWrapper
         schema={schema}
+        mapTreeToProps={mapTreeToProps}
         component={component}
         parentProps={props}
       />

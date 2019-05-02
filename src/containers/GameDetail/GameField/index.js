@@ -60,9 +60,7 @@ class GameField extends React.Component {
           {_.map(field, (row, rowIndex) => (
            <div className={s.row} key={`row-${rowIndex}`}>
              {_.map(row, (col, colIndex) => {
-               const mark = col[0];
-               const visible = col[1];
-               const flagged = col[2];
+               const [mark, visible, flagged] = col;
 
                const isInLoad = isLoadingCursor(this.props.tree.serviceResult);
                const isColAvailable = isMyTurn && !isInLoad && mark === ' ' && !visible && !flagged;

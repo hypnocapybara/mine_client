@@ -44,9 +44,13 @@ class Stats extends React.Component {
           </table>
         </div>
       )
+    } else {
+      return null;
     }
   }
 }
 
 
-export default schema({})(Stats);
+export default schema({}, {
+  token: ['userCursor', 'data', 'token'],
+})(Stats);
